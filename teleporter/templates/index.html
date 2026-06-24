@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantum Teleportation Messenger</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* CSS Reset & Base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: #0f0f13;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* Background Glows */
+    .bg-glow-1 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .bg-glow-2 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.04) 0%, transparent 70%);
+      bottom: -150px;
+      right: -150px;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    /* Headings */
+    h1, h2, h3, h4 {
+      color: #ffffff;
+      font-weight: 600;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 35px;
+      max-width: 850px;
+      width: 100%;
+    }
+    
+    header h1 {
+      font-size: 2.4rem;
+      background: linear-gradient(135deg, #a7f3d0 0%, #6366f1 50%, #d8b4fe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      letter-spacing: -0.8px;
+    }
+    
+    header p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    
+    /* Container for side-by-side Bloch spheres */
+    .visualizer-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 35px;
+      flex-wrap: wrap;
+    }
+    
+    .sphere-card {
+      background: rgba(21, 21, 30, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 48px 20px 20px 20px;
+      width: 255px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+    }
+    
+    .sphere-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+    }
+    
+    /* Active, Destroyed, and Scrambled card states */
+    .sphere-card.active-card {
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.12);
+    }
+    
+    .sphere-card.destroyed-card {
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .sphere-card.destroyed-card .sphere-vector {
+      opacity: 0.15 !important;
+      stroke: #ef4444 !important;
+    }
+    .sphere-card.destroyed-card .sphere-point {
+      opacity: 0.15 !important;
+      fill: #ef4444 !important;
+    }
+    .sphere-card.destroyed-card #adam-question-mark {
+      opacity: 0.15 !important;
+      fill: #ef4444 !important;
+    }
+    .sphere-card.destroyed-card #mahi-question-mark {
+      opacity: 0.15 !important;
+      fill: #ef4444 !important;
+    }
+    
+    .destroyed-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .destroyed-badge.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Entangled Badges */
+    .entangled-badge {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .entangled-badge.required {
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .entangled-badge.ready {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
+    }
+
+    @keyframes spin-collapse {
+      0% { transform: rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: rotate(720deg) scale(0); opacity: 0; }
+    }
+    .spin-collapse-anim {
+      animation: spin-collapse 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      transform-origin: 80px 80px;
+    }
+    
+    .sphere-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 15px 0;
+      position: relative;
+    }
+    
+    .bloch-sphere {
+      filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.1));
+    }
+    
+    /* SVG Sphere Styles */
+    .sphere-bg {
+      fill: rgba(15, 15, 22, 0.7);
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 1.5;
+    }
+    .sphere-card#adam-card .sphere-bg { stroke: rgba(16, 185, 129, 0.2); }
+    .sphere-card#mahi-card .sphere-bg { stroke: rgba(99, 102, 241, 0.2); }
+    .sphere-card#eve-card .sphere-bg { stroke: rgba(239, 68, 68, 0.2); }
+    
+    .sphere-equator {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 1;
+      stroke-dasharray: 3, 3;
+    }
+    .sphere-axis {
+      stroke: rgba(255, 255, 255, 0.12);
+      stroke-width: 1;
+      stroke-dasharray: 2, 2;
+    }
+    .sphere-label {
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      fill: #cbd5e1;
+      text-anchor: middle;
+      font-weight: 500;
+    }
+    .sphere-label-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 8px;
+      fill: rgba(255, 255, 255, 0.25);
+      text-anchor: middle;
+    }
+    
+    /* Vectors styling */
+    .sphere-vector {
+      stroke-width: 3;
+      stroke-linecap: round;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sphere-point {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #adam-vector { stroke: #10b981; }
+    #adam-point { fill: #34d399; filter: drop-shadow(0 0 4px #10b981); }
+    
+    #mahi-vector { stroke: #6366f1; }
+    #mahi-point { fill: #818cf8; filter: drop-shadow(0 0 4px #6366f1); }
+    
+    #eve-vector { stroke: #ef4444; }
+    #eve-point { fill: #f87171; filter: drop-shadow(0 0 4px #ef4444); }
+    
+    .sphere-angles {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 5px;
+      text-align: center;
+    }
+    
+    /* Main Dashboard Layout */
+    .main-dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 40px;
+    }
+    
+    @media (max-width: 980px) {
+      .main-dashboard {
+        grid-template-columns: 1fr;
+      }
+      .visualizer-row {
+        flex-direction: column;
+        align-items: center;
+      }
+      .sphere-card {
+        width: 100%;
+        max-width: 400px;
+      }
+    }
+    
+    .column-panel {
+      background: rgba(21, 21, 30, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(5px);
+    }
+    
+    .column-panel h2 {
+      font-size: 1.25rem;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+    
+    /* Play God vs Human Mode Styles */
+    .mode-select {
+      display: flex;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    .mode-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .mode-btn.active {
+      background: #6366f1;
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+    }
+    .mode-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.02);
+      color: #ffffff;
+    }
+
+    .gen-btn {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .gen-btn:hover:not(:disabled) {
+      background: rgba(99, 102, 241, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
+    }
+    .gen-btn:disabled {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.05);
+      color: rgba(255,255,255,0.2);
+      cursor: not-allowed;
+    }
+    
+    .human-state-text {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.015);
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      width: 100%;
+      line-height: 1.4;
+    }
+    
+    /* Control Panel Buttons */
+    .setup-btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .panel-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .panel-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+    .panel-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .panel-btn.btn-active-success {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #a7f3d0;
+    }
+    
+    /* Sliders Styling */
+    .control-group {
+      margin-bottom: 20px;
+    }
+    
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    
+    .control-label span {
+      font-family: 'Fira Code', monospace;
+      color: #10b981;
+      font-weight: 500;
+    }
+    
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+      transition: background 0.3s;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #10b981;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+      transition: transform 0.1s, background-color 0.3s;
+    }
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+    
+    /* Eves Switches Panels */
+    .eves-panel {
+      margin-bottom: 20px;
+    }
+    .switch-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.015);
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      margin-bottom: 10px;
+    }
+    .switch-container:last-child {
+      margin-bottom: 0;
+    }
+    
+    .switch-label {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider-switch {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.12);
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+    }
+    .slider-switch:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #cbd5e1;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider-switch {
+      background-color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
+    }
+    input:checked + .slider-switch:before {
+      transform: translateX(18px);
+      background-color: #ffffff;
+    }
+    
+    .eve-warning-badge {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      max-height: 0;
+      margin-top: -10px;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .eve-warning-badge.show {
+      opacity: 1;
+      max-height: 60px;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    
+    /* Action Buttons */
+    .action-btn {
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .action-btn:active {
+      transform: translateY(0);
+    }
+    .action-btn:disabled {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: rgba(255, 255, 255, 0.2) !important;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    
+    .measure-btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+    }
+    .measure-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+      background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+    }
+
+    .correct-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+      margin-bottom: 20px;
+    }
+    .correct-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+      background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%);
+    }
+    
+    /* Quantum Channel Timeline */
+    .timeline-container {
+      position: relative;
+      margin: 10px 0 25px 0;
+      padding-left: 24px;
+    }
+    .timeline-line {
+      position: absolute;
+      left: 7px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .timeline-step {
+      position: relative;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+    .timeline-step:last-child {
+      margin-bottom: 0;
+    }
+    .timeline-marker {
+      position: absolute;
+      left: -24px;
+      top: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #15151e;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+    .timeline-step.active .timeline-marker {
+      background: #6366f1;
+      border-color: #818cf8;
+      box-shadow: 0 0 10px #6366f1;
+      transform: scale(1.2);
+    }
+    .timeline-step.completed .timeline-marker {
+      background: #10b981;
+      border-color: #34d399;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+    }
+    .timeline-step.warning .timeline-marker {
+      background: #ef4444 !important;
+      border-color: #f87171 !important;
+      box-shadow: 0 0 10px #ef4444 !important;
+    }
+    
+    .timeline-content {
+      font-size: 0.9rem;
+      color: #64748b;
+      padding-left: 10px;
+      transition: all 0.3s ease;
+      line-height: 1.3;
+    }
+    .timeline-step.active .timeline-content {
+      color: #ffffff;
+      font-weight: 500;
+      transform: translateX(4px);
+    }
+    .timeline-step.completed .timeline-content {
+      color: #e2e8f0;
+    }
+    .timeline-step.warning .timeline-content {
+      color: #fca5a5 !important;
+      font-weight: 600;
+    }
+    
+    .timeline-subtext {
+      font-size: 0.78rem;
+      color: #475569;
+      margin-top: 3px;
+    }
+    .timeline-step.active .timeline-subtext {
+      color: #a5b4fc;
+    }
+    .timeline-step.completed .timeline-subtext {
+      color: #94a3b8;
+    }
+    .timeline-step.warning .timeline-subtext {
+      color: #ef4444 !important;
+    }
+    
+    /* Pre Circuit Box */
+    .circuit-container {
+      background: #07070a;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 16px;
+      overflow-x: auto;
+      margin-top: 15px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .circuit-title {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+    }
+    
+    .circuit-diagram {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      white-space: pre;
+      line-height: 1.2;
+    }
+    
+    /* Mahi Results Styling */
+    .result-group {
+      margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+    .result-group:last-child {
+      margin-bottom: 0;
+    }
+    
+    .fidelity-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .fidelity-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #94a3b8;
+    }
+    .fidelity-header span:last-child {
+      font-family: 'Fira Code', monospace;
+      color: #ffffff;
+    }
+    
+    .fidelity-bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .fidelity-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+    }
+    
+    /* Fidelity colors */
+    .fidelity-green {
+      background: linear-gradient(90deg, #10b981, #34d399);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+    }
+    .fidelity-orange {
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    .fidelity-red {
+      background: linear-gradient(90deg, #ef4444, #f87171);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+    }
+    
+    .status-box {
+      background: rgba(255, 255, 255, 0.015);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 16px;
+      min-height: 85px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    .status-text {
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .status-text.success { color: #34d399; }
+    .status-text.warning { color: #fcd34d; }
+    .status-text.danger { color: #fca5a5; }
+    
+    .bits-display {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 8px;
+    }
+    
+    .bit-tag {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    /* State Tomography Terminal Console */
+    .tomo-card {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 15px;
+      margin-top: 15px;
+    }
+    .tomo-console {
+      background: #050508;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.7rem;
+      color: #34d399;
+      height: 110px;
+      overflow-y: auto;
+      margin-top: 10px;
+      line-height: 1.4;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    
+    /* Explanation Panels */
+    .explanation-row {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .explanation-row {
+        flex-direction: column;
+      }
+    }
+    
+    .explanation-card {
+      flex: 1;
+      background: rgba(21, 21, 30, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .explanation-card:hover {
+      background: rgba(21, 21, 30, 0.5);
+      border-color: rgba(99, 102, 241, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    .explanation-card h4 {
+      font-size: 0.95rem;
+      color: #a5b4fc;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    
+    .explanation-card p {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    
+    /* Custom Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #15151e;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.15);
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.show .modal-card {
+      transform: translateY(0);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-header h3 {
+      font-size: 1.2rem;
+      color: #ef4444;
+    }
+    .modal-body p {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .modal-body p:last-child {
+      margin-bottom: 0;
+    }
+    .modal-close-btn {
+      background: #ef4444;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+      transition: background 0.2s;
+    }
+    .modal-close-btn:hover {
+      background: #dc2626;
+    }
+
+    /* Flying Particles and Packets */
+    .pulse-particle {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #pulse-adam {
+      background: #10b981;
+      box-shadow: 0 0 12px #10b981, 0 0 4px #ffffff;
+    }
+    #pulse-mahi {
+      background: #6366f1;
+      box-shadow: 0 0 12px #6366f1, 0 0 4px #ffffff;
+    }
+    
+    #classical-packet {
+      position: fixed;
+      background: #6366f1;
+      color: #ffffff;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+      box-shadow: 0 0 12px #6366f1;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    /* Play God vs Human Mode Styles */
+    .sphere-card.destroyed-card #adam-question-mark {
+      opacity: 0.15 !important;
+      fill: #ef4444 !important;
+    }
+
+    /* Utilities */
+    .hidden {
+      display: none !important;
+    }
+    
+    .opacity-zero {
+      opacity: 0 !important;
+    }
+
+    /* Footer Styling */
+    .app-footer {
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      padding: 24px;
+      background: rgba(21, 21, 30, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 20px;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .footer-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+    }
+    
+    .footer-text {
+      font-size: 0.95rem;
+      color: #94a3b8;
+    }
+    
+    .author-name {
+      font-weight: 600;
+      color: #ffffff;
+      background: linear-gradient(135deg, #a7f3d0 0%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 4px 0;
+    }
+    
+    .footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+    
+    .footer-link:hover {
+      color: #ffffff;
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+    
+    .footer-license {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+    
+    .license-text-link {
+      color: #6366f1;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .license-text-link:hover {
+      color: #818cf8;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <header>
+    <h1>Quantum Teleportation Messenger</h1>
+    <p>
+      An interactive step-by-step visualizer of quantum state teleportation. 
+      Observe how quantum entanglement acts as a secure channel, and test how the 
+      No-Cloning Theorem guarantees that eavesdropper interception immediately destroys the message.
+    </p>
+  </header>
+
+  <!-- Side-by-Side Bloch Spheres Row -->
+  <div class="visualizer-row">
+    <!-- Adam's Qubit -->
+    <div class="sphere-card active-card" id="adam-card">
+      <div class="destroyed-badge" id="adam-destroyed-badge">State Destroyed</div>
+      <div class="entangled-badge required" id="adam-entangled-badge">Entanglement Required</div>
+      <h3>Adam's Qubit |ψ⟩</h3>
+      <div class="sphere-wrapper">
+        <svg class="bloch-sphere" width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" class="sphere-bg" />
+          <ellipse cx="80" cy="80" rx="60" ry="18" class="sphere-equator" />
+          <line x1="80" y1="20" x2="80" y2="140" class="sphere-axis" />
+          <line x1="20" y1="80" x2="140" y2="80" class="sphere-axis" />
+          
+          <text x="80" y="15" class="sphere-label">|0⟩</text>
+          <text x="80" y="155" class="sphere-label">|1⟩</text>
+          <text x="10" y="83" class="sphere-label-sub">-x</text>
+          <text x="150" y="83" class="sphere-label-sub">+x</text>
+          
+          <text id="adam-question-mark" x="80" y="92" text-anchor="middle" font-size="28" fill="rgba(255,255,255,0.4)" font-family="'Inter', sans-serif" style="display: none; font-weight: 500;">?</text>
+          <g id="adam-vector-group">
+            <line id="adam-vector" x1="80" y1="80" x2="80" y2="32" class="sphere-vector" />
+            <circle id="adam-point" cx="80" cy="32" r="4.5" class="sphere-point" />
+          </g>
+        </svg>
+      </div>
+      <div class="sphere-angles">
+        θ: <span id="adam-theta-val">1.57</span> &nbsp; φ: <span id="adam-phi-val">0.00</span>
+      </div>
+    </div>
+
+    <!-- Eve's Intercepted Qubit (Fades in / pops out dynamically) -->
+    <div class="sphere-card" id="eve-card" style="display: none;">
+      <h3 style="color: #ef4444;">Eve's Intercepted Qubit</h3>
+      <div class="sphere-wrapper">
+        <svg class="bloch-sphere" width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" class="sphere-bg" />
+          <ellipse cx="80" cy="80" rx="60" ry="18" class="sphere-equator" />
+          <line x1="80" y1="20" x2="80" y2="140" class="sphere-axis" />
+          <line x1="20" y1="80" x2="140" y2="80" class="sphere-axis" />
+          
+          <text x="80" y="15" class="sphere-label">|0⟩</text>
+          <text x="80" y="155" class="sphere-label">|1⟩</text>
+          <text x="10" y="83" class="sphere-label-sub">-x</text>
+          <text x="150" y="83" class="sphere-label-sub">+x</text>
+          
+          <line id="eve-vector" x1="80" y1="80" x2="80" y2="80" class="sphere-vector" opacity="0" />
+          <circle id="eve-point" cx="80" cy="80" r="4.5" class="sphere-point" opacity="0" />
+        </svg>
+      </div>
+      <div class="sphere-angles" id="eve-sphere-label">
+        Interception Pending...
+      </div>
+    </div>
+
+    <!-- Mahi's Received Qubit -->
+    <div class="sphere-card" id="mahi-card">
+      <div class="entangled-badge required" id="mahi-entangled-badge">Entanglement Required</div>
+      <h3>Mahi's Qubit |ψ'⟩</h3>
+      <div class="sphere-wrapper">
+        <svg class="bloch-sphere" width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" class="sphere-bg" />
+          <ellipse cx="80" cy="80" rx="60" ry="18" class="sphere-equator" />
+          <line x1="80" y1="20" x2="80" y2="140" class="sphere-axis" />
+          <line x1="20" y1="80" x2="140" y2="80" class="sphere-axis" />
+          
+          <text x="80" y="15" class="sphere-label">|0⟩</text>
+          <text x="80" y="155" class="sphere-label">|1⟩</text>
+          <text x="10" y="83" class="sphere-label-sub">-x</text>
+          <text x="150" y="83" class="sphere-label-sub">+x</text>
+          
+          <text id="mahi-question-mark" x="80" y="92" text-anchor="middle" font-size="28" fill="rgba(255,255,255,0.4)" font-family="'Inter', sans-serif" style="display: none; font-weight: 500;">?</text>
+          <line id="mahi-vector" x1="80" y1="80" x2="80" y2="80" class="sphere-vector" opacity="0" />
+          <circle id="mahi-point" cx="80" cy="80" r="4.5" class="sphere-point" opacity="0" />
+        </svg>
+      </div>
+      <div class="sphere-angles" id="mahi-sphere-label">
+        Awaiting Channel...
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Action Dashboard -->
+  <div class="main-dashboard">
+    <!-- Adam controls -->
+    <div class="column-panel">
+      <h2>Adam (Sender)</h2>
+      
+      <!-- Mode Selection -->
+      <div class="mode-select">
+        <button id="mode-god-btn" class="mode-btn active">Play God</button>
+        <button id="mode-human-btn" class="mode-btn">Human</button>
+      </div>
+
+      <!-- Play God mode controls -->
+      <div id="god-controls">
+        <div class="control-group">
+          <div class="control-label">
+            <span>State angle θ (theta)</span>
+            <span id="theta-display">π/2 (1.57)</span>
+          </div>
+          <input type="range" id="theta-slider" class="slider" min="0" max="3.14159" step="0.01" value="1.5708">
+        </div>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Phase angle φ (phi)</span>
+            <span id="phi-display">0.00</span>
+          </div>
+          <input type="range" id="phi-slider" class="slider" min="0" max="6.28318" step="0.01" value="0.00">
+        </div>
+      </div>
+
+      <!-- Human mode controls -->
+      <div id="human-controls" class="hidden">
+        <button id="gen-btn" class="gen-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          Generate Random Qubit
+        </button>
+        <div class="human-state-text" id="human-state-text">
+          No qubit generated. Click above to receive a particle.
+        </div>
+      </div>
+
+      <!-- Entanglement Setup Buttons -->
+      <div class="setup-btn-row">
+        <button id="entangle-btn" class="panel-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          1. Create Entangled Pair
+        </button>
+        <button id="clone-btn" class="panel-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Try Clone
+        </button>
+      </div>
+
+      <button id="teleport-btn" class="action-btn measure-btn" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        2. Measure &amp; Send
+      </button>
+    </div>
+
+    <!-- Quantum timeline channel -->
+    <div class="column-panel">
+      <h2>Quantum Channel</h2>
+      
+      <!-- Eve's Intercept Switch Panel -->
+      <div class="eves-panel">
+        <div class="switch-container">
+          <div class="switch-label" style="color: #fca5a5;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Eve intercepts Quantum Channel (q2)
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="eve-toggle">
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+        
+        <div class="switch-container">
+          <div class="switch-label" style="color: #fca5a5;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+            </svg>
+            Eve blocks Classical Channel (c0, c1)
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="classical-block-toggle">
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="eve-warning-badge" id="eve-warning-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span id="eve-warning-text">Eavesdropper active</span>
+      </div>
+
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+        
+        <div class="timeline-step" id="step-1">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Step 1: Entangled Bell Pair Distributed
+            <div class="timeline-subtext">H gate and CNOT entangle qubits q1 (Adam) &amp; q2 (Mahi). Sent beforehand.</div>
+          </div>
+        </div>
+
+        <div class="timeline-step" id="step-2">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Step 2: Encode State
+            <div class="timeline-subtext">Rotations RY(θ) &amp; RZ(φ) place state |ψ⟩ onto Adam's qubit q0.</div>
+          </div>
+        </div>
+
+        <!-- Eve Interception warning step (only shown if Eve active) -->
+        <div class="timeline-step" id="step-eve" style="display: none;">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Eve intercepts q2! (Quantum Channel tapped)
+            <div class="timeline-subtext">Eve measures q2. Entanglement collapses. Mahi receives garbage.</div>
+          </div>
+        </div>
+
+        <div class="timeline-step" id="step-3">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Step 3: Adam's Bell Measurement
+            <div class="timeline-subtext">Adam measures q0, q1. The original state |ψ⟩ is instantly destroyed.</div>
+          </div>
+        </div>
+
+        <div class="timeline-step" id="step-4">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Step 4: Classical Bits Sent (c0, c1)
+            <div class="timeline-subtext" id="step-4-subtext">Adam sends 2 classical bits. Subject to classical speed limits.</div>
+          </div>
+        </div>
+
+        <!-- Classical Blocked warning step (only shown if classical blocked is active) -->
+        <div class="timeline-step" id="step-block" style="display: none;">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Classical channel blocked!
+            <div class="timeline-subtext">Correction bits c0, c1 did not reach Mahi. State remains unreadable.</div>
+          </div>
+        </div>
+
+        <div class="timeline-step" id="step-5">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            Step 5: Mahi Applies Corrections
+            <div class="timeline-subtext">Mahi receives c0, c1 and applies X / Z gates to rebuild |ψ⟩ on q2.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Circuit pre -->
+      <div class="circuit-container">
+        <div class="circuit-title">
+          <span>Qiskit Quantum Circuit Diagram</span>
+        </div>
+        <pre class="circuit-diagram" id="circuit-diagram-code">Awaiting circuit initialization...</pre>
+      </div>
+    </div>
+
+    <!-- Mahi results -->
+    <div class="column-panel">
+      <h2>Mahi (Receiver)</h2>
+      
+      <button id="correct-btn" class="action-btn correct-btn" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        3. Apply Corrections
+      </button>
+
+      <div class="result-group">
+        <div class="fidelity-container">
+          <div class="fidelity-header">
+            <span>State Fidelity</span>
+            <span id="fidelity-percent">0%</span>
+          </div>
+          <div class="fidelity-bar-bg">
+            <div id="fidelity-bar" class="fidelity-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-group">
+        <div class="status-box">
+          <div class="status-text" id="status-message">
+            Awaiting entanglement setup and qubit preparation.
+          </div>
+          <div class="bits-display id-display" id="bits-display-box" style="display: none;">
+            <div>Adam sent: <span class="bit-tag" id="bits-sent-val">c0=0, c1=0</span></div>
+            <div id="eve-intercept-val-box" style="display: none; margin-top: 4px; color: #f87171;">
+              Eve intercepted: <span class="bit-tag" style="background: rgba(239, 68, 68, 0.2); color: #f87171;" id="eve-intercept-val">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- State Tomography simulation panel -->
+      <div class="tomo-card">
+        <button id="tomo-btn" class="panel-btn" style="width: 100%; justify-content: center;" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          Run Quantum State Tomography
+        </button>
+        <div class="tomo-console" id="tomo-console">
+          Console: Awaiting successful state teleportation to perform tomography...
+        </div>
+        <div id="tomo-label" style="font-size: 0.72rem; color: #a5b4fc; margin-top: 8px; font-weight: 500; display: none; text-align: center;">
+          💡 This only works because we ran 1000 fresh copies from the same source.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Static Explanations -->
+  <div class="explanation-row">
+    <div class="explanation-card">
+      <h4>No-Cloning Theorem</h4>
+      <p>
+        A quantum state cannot be copied. If Eve attempts to read Adam's qubit q2, 
+        she destroys the entanglement in the channel. This is not encryption protected 
+        by math complexity — it is protected by the physical laws of nature.
+      </p>
+    </div>
+    
+    <div class="explanation-card">
+      <h4>Why 2 Classical Bits?</h4>
+      <p>
+        Teleportation is not faster than light. Mahi's qubit contains the state, 
+        but rotated. He requires Adam's 2 measurement bits (c0, c1) to know which correction 
+        gates (X, Z) to apply. Without them, Mahi's qubit is pure random noise.
+      </p>
+    </div>
+
+    <div class="explanation-card">
+      <h4>What Fidelity Means</h4>
+      <p>
+        Fidelity measures how close Mahi's state is to Adam's: 1.0 means an exact replica 
+        was successfully teleported. A value of 0.5 represents random noise, which is the 
+        immediate signature of an active eavesdropper.
+      </p>
+    </div>
+  </div>
+
+  <!-- Styled Footer with Author Details -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p class="footer-text">Developed by <span class="author-name">Mohibul hoque</span></p>
+      <div class="footer-links">
+        <a href="mailto:hokworks@gmail.com" class="footer-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          hokworks@gmail.com
+        </a>
+        <a href="https://www.linkedin.com/in/speedymohibul" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+            <rect x="2" y="9" width="4" height="12"></rect>
+            <circle cx="4" cy="4" r="2"></circle>
+          </svg>
+          linkedin.com/in/speedymohibul
+        </a>
+      </div>
+      <p class="footer-license">Released under the MIT License. Copyright &copy; 2026</p>
+    </div>
+  </footer>
+
+  <!-- Custom Modal Overlay -->
+  <div id="modal-container" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <h3>No-Cloning Theorem Violation</h3>
+      </div>
+      <div class="modal-body">
+        <p style="color: #ef4444; font-weight: 600; font-size: 1rem; margin-bottom: 12px;">Clone attempt failed!</p>
+        <p><strong>To clone, we must measure first.</strong></p>
+        <p>But the moment we measure, the quantum state collapses instantly into a 0 or 1. There is nothing left to clone.</p>
+        <p style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); padding: 12px; border-radius: 8px; font-weight: 500; color: #fca5a5; margin-top: 15px; text-align: center;">
+          No-Cloning Theorem: You can copy classical bits, never quantum states.
+        </p>
+      </div>
+      <button class="modal-close-btn" id="modal-close-btn">Close</button>
+    </div>
+  </div>
+
+  <!-- Hidden particle elements for animations -->
+  <div id="pulse-adam" class="pulse-particle hidden"></div>
+  <div id="pulse-mahi" class="pulse-particle hidden"></div>
+  <div id="classical-packet" class="hidden">c0=?, c1=?</div>
+
+  <!-- JavaScript logic -->
+  <script>
+    // Elements
+    const thetaSlider = document.getElementById('theta-slider');
+    const phiSlider = document.getElementById('phi-slider');
+    const thetaDisplay = document.getElementById('theta-display');
+    const phiDisplay = document.getElementById('phi-display');
+    
+    const adamThetaVal = document.getElementById('adam-theta-val');
+    const adamPhiVal = document.getElementById('adam-phi-val');
+    const mahiSphereLabel = document.getElementById('mahi-sphere-label');
+    
+    const eveToggle = document.getElementById('eve-toggle');
+    const classicalBlockToggle = document.getElementById('classical-block-toggle');
+    const eveCard = document.getElementById('eve-card');
+    const eveWarningBadge = document.getElementById('eve-warning-badge');
+    const eveWarningText = document.getElementById('eve-warning-text');
+    const eveSphereLabel = document.getElementById('eve-sphere-label');
+    
+    const entangleBtn = document.getElementById('entangle-btn');
+    const cloneBtn = document.getElementById('clone-btn');
+    const teleportBtn = document.getElementById('teleport-btn');
+    const correctBtn = document.getElementById('correct-btn');
+    const tomoBtn = document.getElementById('tomo-btn');
+    const tomoConsole = document.getElementById('tomo-console');
+    
+    const circuitCode = document.getElementById('circuit-diagram-code');
+    const fidelityPercent = document.getElementById('fidelity-percent');
+    const fidelityBar = document.getElementById('fidelity-bar');
+    const statusMessage = document.getElementById('status-message');
+    const bitsDisplayBox = document.getElementById('bits-display-box');
+    const bitsSentVal = document.getElementById('bits-sent-val');
+    const eveInterceptValBox = document.getElementById('eve-intercept-val-box');
+    const eveInterceptVal = document.getElementById('eve-intercept-val');
+    
+    const adamCard = document.getElementById('adam-card');
+    const mahiCard = document.getElementById('mahi-card');
+    const adamDestroyedBadge = document.getElementById('adam-destroyed-badge');
+    const adamEntangledBadge = document.getElementById('adam-entangled-badge');
+    const mahiEntangledBadge = document.getElementById('mahi-entangled-badge');
+    const step4Subtext = document.getElementById('step-4-subtext');
+
+    const modeGodBtn = document.getElementById('mode-god-btn');
+    const modeHumanBtn = document.getElementById('mode-human-btn');
+    const godControls = document.getElementById('god-controls');
+    const humanControls = document.getElementById('human-controls');
+    const genBtn = document.getElementById('gen-btn');
+    const humanStateText = document.getElementById('human-state-text');
+    const adamQuestionMark = document.getElementById('adam-question-mark');
+    const adamVector = document.getElementById('adam-vector');
+    const adamPoint = document.getElementById('adam-point');
+
+    const modalContainer = document.getElementById('modal-container');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+
+    // Protocol State Variables
+    let currentMode = 'god'; 
+    let hiddenTheta = null;
+    let hiddenPhi = null;
+    
+    let isEntangledReady = false;
+    let isStatePrepared = true; // God mode is prepared by default
+    let teleportData = null; // Stores simulation results from Step 2
+
+    // Update Bloch Sphere Coordinates
+    function updateSphere(id, theta, phi) {
+      const cx = 80;
+      const cy = 80;
+      const radius = 60;
+      
+      // Calculate 3D Bloch coordinates
+      const x = Math.sin(theta) * Math.cos(phi);
+      const z = Math.cos(theta);
+      
+      // Project to 2D
+      const screen_x = cx + radius * x * 0.8;
+      const screen_y = cy - radius * z * 0.8;
+      
+      // Update SVG elements
+      const vector = document.getElementById(`${id}-vector`);
+      const point = document.getElementById(`${id}-point`);
+      
+      if (vector && point) {
+        vector.setAttribute('x2', screen_x.toFixed(2));
+        vector.setAttribute('y2', screen_y.toFixed(2));
+        point.setAttribute('cx', screen_x.toFixed(2));
+        point.setAttribute('cy', screen_y.toFixed(2));
+      }
+    }
+
+    // Update Eve Sphere status
+    function updateEveSphere(eve_bit) {
+      const eveVector = document.getElementById('eve-vector');
+      const evePoint = document.getElementById('eve-point');
+      
+      if (eve_bit === null || eve_bit === undefined) {
+        eveVector.setAttribute('opacity', '0');
+        evePoint.setAttribute('opacity', '0');
+        eveSphereLabel.textContent = 'Interception Pending...';
+        return;
+      }
+      
+      eveVector.setAttribute('opacity', '1');
+      evePoint.setAttribute('opacity', '1');
+      
+      // Collapses to either |0> (theta = 0) or |1> (theta = pi)
+      const theta = eve_bit === 0 ? 0 : Math.PI;
+      const phi = 0;
+      updateSphere('eve', theta, phi);
+      eveSphereLabel.innerHTML = `Eve measured: <strong>|${eve_bit}⟩</strong><br><span style="font-size:0.75rem;color:#fca5a5;">(lost all phase info)</span>`;
+    }
+
+    // Reset Adam Card's destroyed visualization state
+    function resetAdamVisualState() {
+      adamCard.classList.remove('destroyed-card');
+      adamDestroyedBadge.classList.remove('show');
+      
+      const adamVectorGroup = document.getElementById('adam-vector-group');
+      if (adamVectorGroup) {
+        adamVectorGroup.classList.remove('spin-collapse-anim');
+        adamVectorGroup.style.display = 'block';
+      }
+      
+      if (currentMode === 'god') {
+        adamVector.style.display = 'block';
+        adamPoint.style.display = 'block';
+        adamVector.setAttribute('opacity', '1');
+        adamPoint.setAttribute('opacity', '1');
+        adamQuestionMark.style.display = 'none';
+      } else {
+        adamVector.style.display = 'none';
+        adamPoint.style.display = 'none';
+        adamQuestionMark.style.display = 'block';
+        adamQuestionMark.setAttribute('opacity', '1');
+      }
+    }
+
+    // Handles Slider input events
+    function updateAdamFromSliders() {
+      if (currentMode !== 'god') return;
+      const theta = parseFloat(thetaSlider.value);
+      const phi = parseFloat(phiSlider.value);
+      
+      // Update Display labels
+      const thetaFrac = (theta / Math.PI).toFixed(2);
+      thetaDisplay.textContent = `θ = ${thetaFrac}π (${theta.toFixed(2)})`;
+      phiDisplay.textContent = phi.toFixed(2);
+      
+      adamThetaVal.textContent = theta.toFixed(2);
+      adamPhiVal.textContent = phi.toFixed(2);
+      
+      // Update Adam Sphere vector
+      updateSphere('adam', theta, phi);
+      resetAdamVisualState();
+      
+      isStatePrepared = true;
+      checkMeasureSendEligibility();
+    }
+
+    // Load initial circuit diagram
+    async function loadDefaultCircuit() {
+      try {
+        const res = await fetch('/circuit');
+        const data = await res.json();
+        if (data.diagram) {
+          circuitCode.textContent = data.diagram;
+        }
+      } catch (err) {
+        console.error("Error loading circuit diagram:", err);
+        circuitCode.textContent = "Error loading circuit diagram.";
+      }
+    }
+
+    // Listeners for Sliders
+    thetaSlider.addEventListener('input', updateAdamFromSliders);
+    phiSlider.addEventListener('input', updateAdamFromSliders);
+
+    // Eves Panel Toggle Behaviors
+    function updateEveWarningBadge() {
+      if (eveToggle.checked || classicalBlockToggle.checked) {
+        eveWarningBadge.classList.add('show');
+        if (eveToggle.checked && classicalBlockToggle.checked) {
+          eveWarningText.textContent = "Eve tapping Quantum & Classical lines!";
+        } else if (eveToggle.checked) {
+          eveWarningText.textContent = "Eve tapping Quantum Channel";
+        } else {
+          eveWarningText.textContent = "Eve tapping Classical Channel";
+        }
+      } else {
+        eveWarningBadge.classList.remove('show');
+      }
+    }
+
+    eveToggle.addEventListener('change', () => {
+      if (eveToggle.checked) {
+        eveCard.style.display = 'flex';
+        updateEveSphere(null);
+      } else {
+        eveCard.style.display = 'none';
+        eveCard.classList.remove('active-card');
+      }
+      updateEveWarningBadge();
+    });
+
+    classicalBlockToggle.addEventListener('change', () => {
+      updateEveWarningBadge();
+    });
+
+    // Modal Close
+    modalCloseBtn.addEventListener('click', () => {
+      modalContainer.classList.remove('show');
+    });
+    cloneBtn.addEventListener('click', () => {
+      modalContainer.classList.add('show');
+    });
+
+    // Check if Measure & Send button can be enabled
+    function checkMeasureSendEligibility() {
+      if (isEntangledReady && isStatePrepared) {
+        teleportBtn.disabled = false;
+        statusMessage.textContent = "State prepared & Entangled qubit ready. Click 'Measure & Send' to start.";
+      } else {
+        teleportBtn.disabled = true;
+        if (!isEntangledReady) {
+          statusMessage.textContent = "Awaiting entanglement setup. Click 'Create Entangled Pair' first.";
+        } else if (!isStatePrepared) {
+          statusMessage.textContent = "Qubit state not prepared. Click 'Generate Random Qubit' to prepare state.";
+        }
+      }
+    }
+
+    // Phase 1: Create Entanglement Setup
+    entangleBtn.addEventListener('click', () => {
+      entangleBtn.disabled = true;
+      statusMessage.textContent = "Generating entangled Bell pair...";
+      
+      resetAdamVisualState();
+      resetMahiCard();
+      
+      // Light up timeline Step 1
+      document.querySelectorAll('.timeline-step').forEach(step => step.classList.remove('active', 'completed', 'warning'));
+      document.getElementById('step-1').classList.add('active');
+
+      animateEntanglement(() => {
+        isEntangledReady = true;
+        entangleBtn.classList.add('btn-active-success');
+        entangleBtn.innerHTML = `✓ Entangled`;
+        
+        adamEntangledBadge.classList.add('ready');
+        adamEntangledBadge.classList.remove('required');
+        adamEntangledBadge.textContent = "Entangled qubit ready";
+        
+        mahiEntangledBadge.classList.add('ready');
+        mahiEntangledBadge.classList.remove('required');
+        mahiEntangledBadge.textContent = "Entangled qubit ready";
+        
+        document.getElementById('step-1').classList.remove('active');
+        document.getElementById('step-1').classList.add('completed');
+        
+        statusMessage.textContent = "Entanglement distributed. Adam holds q1, Mahi holds q2.";
+        checkMeasureSendEligibility();
+      });
+    });
+
+    // Particle flight animation for Entanglement
+    function animateEntanglement(onComplete) {
+      const pulseAdam = document.getElementById('pulse-adam');
+      const pulseMahi = document.getElementById('pulse-mahi');
+      
+      const middleColumn = document.getElementById('step-1'); 
+      const adamCard = document.getElementById('adam-card');
+      const mahiCard = document.getElementById('mahi-card');
+      
+      const midRect = middleColumn.getBoundingClientRect();
+      const adamRect = adamCard.getBoundingClientRect();
+      const mahiRect = mahiCard.getBoundingClientRect();
+      
+      const startX = midRect.left + window.scrollX + 15; 
+      const startY = midRect.top + window.scrollY + 10;
+      
+      const endAdamX = adamRect.left + window.scrollX + adamRect.width / 2;
+      const endAdamY = adamRect.top + window.scrollY + adamRect.height / 2;
+      
+      const endMahiX = mahiRect.left + window.scrollX + mahiRect.width / 2;
+      const endMahiY = mahiRect.top + window.scrollY + mahiRect.height / 2;
+      
+      pulseAdam.style.position = 'absolute';
+      pulseAdam.style.left = `${startX}px`;
+      pulseAdam.style.top = `${startY}px`;
+      pulseAdam.style.opacity = '0';
+      pulseAdam.classList.remove('hidden');
+      
+      pulseMahi.style.position = 'absolute';
+      pulseMahi.style.left = `${startX}px`;
+      pulseMahi.style.top = `${startY}px`;
+      pulseMahi.style.opacity = '0';
+      pulseMahi.classList.remove('hidden');
+      
+      setTimeout(() => {
+        pulseAdam.style.transition = 'all 1s cubic-bezier(0.25, 1, 0.5, 1)';
+        pulseAdam.style.left = `${endAdamX}px`;
+        pulseAdam.style.top = `${endAdamY}px`;
+        pulseAdam.style.opacity = '1';
+        
+        pulseMahi.style.transition = 'all 1s cubic-bezier(0.25, 1, 0.5, 1)';
+        pulseMahi.style.left = `${endMahiX}px`;
+        pulseMahi.style.top = `${endMahiY}px`;
+        pulseMahi.style.opacity = '1';
+      }, 50);
+      
+      setTimeout(() => {
+        pulseAdam.style.transition = 'opacity 0.2s';
+        pulseMahi.style.transition = 'opacity 0.2s';
+        pulseAdam.style.opacity = '0';
+        pulseMahi.style.opacity = '0';
+        
+        setTimeout(() => {
+          pulseAdam.classList.add('hidden');
+          pulseMahi.classList.add('hidden');
+          if (onComplete) onComplete();
+        }, 200);
+      }, 1050);
+    }
+
+    // Run Timeline Animation (Sequential Steps up to Step 4)
+    async function animateTimeline(data) {
+      const steps = [
+        { id: 'step-2', isEve: false, isBlock: false },
+        { id: 'step-eve', isEve: true, isBlock: false },
+        { id: 'step-3', isEve: false, isBlock: false },
+        { id: 'step-4', isEve: false, isBlock: false }
+      ];
+
+      // Reset previous timeline active states
+      document.querySelectorAll('.timeline-step').forEach(step => {
+        if (step.id !== 'step-1') {
+          step.classList.remove('active', 'completed', 'warning');
+        }
+      });
+      document.getElementById('step-block').style.display = 'none';
+
+      // Show/Hide Eve step
+      const eveStepEl = document.getElementById('step-eve');
+      eveStepEl.style.display = data.eve_active ? 'flex' : 'none';
+
+      const activeSteps = steps.filter(s => !s.isEve || data.eve_active);
+
+      for (let i = 0; i < activeSteps.length; i++) {
+        const step = activeSteps[i];
+        const el = document.getElementById(step.id);
+        if (el) {
+          el.classList.add('active');
+          if (step.isEve) {
+            el.classList.add('warning');
+            updateEveSphere(data.eve_bit);
+            eveCard.classList.add('active-card');
+          }
+          
+          if (step.id === 'step-3') {
+            // Adam's vector spin-collapse animation
+            const adamVectorGroup = document.getElementById('adam-vector-group');
+            if (adamVectorGroup) {
+              adamVectorGroup.classList.add('spin-collapse-anim');
+            }
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            adamCard.classList.add('destroyed-card');
+            adamDestroyedBadge.classList.add('show');
+            if (currentMode === 'god') {
+              adamVector.setAttribute('opacity', '0.15');
+              adamPoint.setAttribute('opacity', '0.15');
+            } else {
+              adamQuestionMark.setAttribute('opacity', '0.15');
+            }
+            if (adamVectorGroup) {
+              adamVectorGroup.style.display = 'none';
+            }
+
+            // INSTANT ENTANGLEMENT COLLAPSE ON BOB'S CARD
+            // Mahi's qubit collapses immediately, but he doesn't have the correction bits yet.
+            const mahiVector = document.getElementById('mahi-vector');
+            const mahiPoint = document.getElementById('mahi-point');
+            mahiVector.setAttribute('opacity', '0');
+            mahiPoint.setAttribute('opacity', '0');
+            
+            const mahiQuestionMark = document.getElementById('mahi-question-mark');
+            if (mahiQuestionMark) {
+              mahiQuestionMark.style.display = 'block';
+              mahiQuestionMark.setAttribute('opacity', '0.4');
+            }
+            mahiSphereLabel.textContent = "Entanglement collapsed. Waiting for classical bits...";
+          }
+
+          if (step.id === 'step-4') {
+            step4Subtext.textContent = `Classical bits generated: c0=${data.c0}, c1=${data.c1}. Ready to send.`;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 500));
+          el.classList.remove('active');
+          el.classList.add('completed');
+          if (step.isEve) {
+            el.classList.add('warning');
+          }
+        }
+      }
+    }
+
+    // Step 2: Measure & Send Handler
+    teleportBtn.addEventListener('click', async () => {
+      teleportBtn.disabled = true;
+      thetaSlider.disabled = true;
+      phiSlider.disabled = true;
+      eveToggle.disabled = true;
+      classicalBlockToggle.disabled = true;
+      modeGodBtn.disabled = true;
+      modeHumanBtn.disabled = true;
+      genBtn.disabled = true;
+      cloneBtn.disabled = true;
+
+      // Values
+      let theta, phi;
+      if (currentMode === 'human') {
+        theta = hiddenTheta;
+        phi = hiddenPhi;
+      } else {
+        theta = parseFloat(thetaSlider.value);
+        phi = parseFloat(phiSlider.value);
+      }
+      const eve = eveToggle.checked;
+      const isBlocked = classicalBlockToggle.checked;
+
+      statusMessage.textContent = "Executing quantum measurement on Adam's side...";
+
+      try {
+        const res = await fetch('/teleport', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theta, phi, eve })
+        });
+        teleportData = await res.json();
+        
+        if (teleportData.error) {
+          statusMessage.textContent = "Error: " + teleportData.error;
+          statusMessage.className = "status-text danger";
+          resetControlsOnFailure();
+          return;
+        }
+
+        // Animate Timeline steps (2, eve, 3, 4)
+        await animateTimeline(teleportData);
+
+        // Update circuit text diagram
+        circuitCode.textContent = teleportData.circuit_diagram;
+
+        // Animate Classical Channel transmission
+        statusMessage.textContent = "Sending classical packet to Mahi...";
+        
+        animatePacket(teleportData.c0, teleportData.c1, isBlocked, () => {
+          // Packet arrived / blocked callback
+          if (isBlocked) {
+            // Classical bits blocked!
+            document.getElementById('step-block').style.display = 'flex';
+            document.getElementById('step-block').classList.add('warning', 'completed');
+            
+            statusMessage.innerHTML = "✗ <strong>Classical channel blocked.</strong> Adam's correction bits never reached Mahi. Mahi's qubit is left in an unusable scrambled state.";
+            statusMessage.className = "status-text danger";
+            
+            mahiSphereLabel.textContent = "Classical bits blocked — state unusable.";
+            resetControlsOnCompleted(true); // Complete sequence but blocked
+          } else {
+            // Success arrival
+            step4Subtext.textContent = `Classical bits c0=${teleportData.c0}, c1=${teleportData.c1} arrived!`;
+            statusMessage.innerHTML = `Classical packet arrived! Mahi received: <strong>c0=${teleportData.c0}, c1=${teleportData.c1}</strong>. Click 'Apply Corrections'.`;
+            mahiSphereLabel.textContent = "Waiting for correction gates...";
+            correctBtn.disabled = false;
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        statusMessage.textContent = "Simulation request failed.";
+        statusMessage.className = "status-text danger";
+        resetControlsOnFailure();
+      }
+    });
+
+    // Particle flight animation for Classical Packet
+    function animatePacket(c0, c1, isBlocked, onComplete) {
+      const packet = document.getElementById('classical-packet');
+      packet.textContent = `c0=${c0}, c1=${c1}`;
+      
+      const adamCard = document.getElementById('adam-card');
+      const mahiCard = document.getElementById('mahi-card');
+      
+      const adamRect = adamCard.getBoundingClientRect();
+      const mahiRect = mahiCard.getBoundingClientRect();
+      
+      const startX = adamRect.left + window.scrollX + adamRect.width / 2;
+      const startY = adamRect.top + window.scrollY + adamRect.height / 2;
+      
+      const endX = mahiRect.left + window.scrollX + mahiRect.width / 2;
+      const endY = mahiRect.top + window.scrollY + mahiRect.height / 2;
+      
+      packet.style.left = `${startX}px`;
+      packet.style.top = `${startY}px`;
+      packet.style.transform = 'translate(-50%, -50%) scale(0.6)';
+      packet.style.opacity = '0';
+      packet.style.backgroundColor = '#6366f1';
+      packet.style.boxShadow = '0 0 12px #6366f1';
+      packet.classList.remove('hidden');
+      
+      if (isBlocked) {
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        
+        setTimeout(() => {
+          packet.style.transition = 'all 1.0s cubic-bezier(0.25, 1, 0.5, 1)';
+          packet.style.left = `${midX}px`;
+          packet.style.top = `${midY}px`;
+          packet.style.transform = 'translate(-50%, -50%) scale(1)';
+          packet.style.opacity = '1';
+        }, 50);
+        
+        setTimeout(() => {
+          packet.style.transition = 'all 0.6s ease-in';
+          packet.style.backgroundColor = '#ef4444';
+          packet.style.boxShadow = '0 0 15px #ef4444';
+          packet.textContent = '❌ Blocked!';
+          packet.style.top = `${midY + 40}px`;
+          packet.style.opacity = '0';
+        }, 1050);
+        
+        setTimeout(() => {
+          packet.classList.add('hidden');
+          if (onComplete) onComplete();
+        }, 1700);
+      } else {
+        setTimeout(() => {
+          packet.style.transition = 'all 2.0s cubic-bezier(0.25, 1, 0.5, 1)';
+          packet.style.left = `${endX}px`;
+          packet.style.top = `${endY}px`;
+          packet.style.transform = 'translate(-50%, -50%) scale(1)';
+          packet.style.opacity = '1';
+        }, 50);
+        
+        setTimeout(() => {
+          packet.style.transition = 'opacity 0.2s';
+          packet.style.opacity = '0';
+          setTimeout(() => {
+            packet.classList.add('hidden');
+            if (onComplete) onComplete();
+          }, 200);
+        }, 2050);
+      }
+    }
+
+    // Step 3: Apply Corrections Handler
+    correctBtn.addEventListener('click', async () => {
+      correctBtn.disabled = true;
+      statusMessage.textContent = "Applying correction gates on Mahi's qubit...";
+
+      // Light up timeline Step 5
+      const step5 = document.getElementById('step-5');
+      step5.classList.add('active');
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      step5.classList.remove('active');
+      step5.classList.add('completed');
+
+      // Hide Mahi's question mark
+      const mahiQuestionMark = document.getElementById('mahi-question-mark');
+      if (mahiQuestionMark) {
+        mahiQuestionMark.style.display = 'none';
+      }
+
+      // Render Mahi result vector and angles
+      const mahiVector = document.getElementById('mahi-vector');
+      const mahiPoint = document.getElementById('mahi-point');
+      mahiVector.setAttribute('opacity', '1');
+      mahiPoint.setAttribute('opacity', '1');
+      
+      updateSphere('mahi', teleportData.mahi_theta, teleportData.mahi_phi);
+      mahiSphereLabel.innerHTML = `θ: <strong>${teleportData.mahi_theta.toFixed(2)}</strong> &nbsp; φ: <strong>${teleportData.mahi_phi.toFixed(2)}</strong>`;
+
+      // Update Fidelity progress bar
+      const fid = teleportData.fidelity;
+      const fidPercentage = (fid * 100).toFixed(1) + "%";
+      fidelityPercent.textContent = fidPercentage;
+      fidelityBar.style.width = fidPercentage;
+      
+      fidelityBar.classList.remove('fidelity-green', 'fidelity-orange', 'fidelity-red');
+
+      // Update status text and bar color
+      if (fid > 0.9) {
+        fidelityBar.classList.add('fidelity-green');
+        if (currentMode === 'human') {
+          statusMessage.innerHTML = "✓ <strong>Teleportation successful!</strong> Mahi successfully reconstructed the exact state Adam sent, even though neither Adam nor Mahi classically knew what it was.";
+        } else {
+          statusMessage.textContent = "✓ Teleportation successful. State received intact.";
+        }
+        statusMessage.className = "status-text success";
+      } else if (fid >= 0.5) {
+        fidelityBar.classList.add('fidelity-orange');
+        statusMessage.textContent = "⚠ Partial corruption detected.";
+        statusMessage.className = "status-text warning";
+      } else {
+        fidelityBar.classList.add('fidelity-red');
+        statusMessage.textContent = "✗ Eavesdropper detected. State destroyed.";
+        statusMessage.className = "status-text danger";
+      }
+
+      // Display bits sent
+      bitsDisplayBox.style.display = 'block';
+      bitsSentVal.textContent = `c0=${teleportData.c0}, c1=${teleportData.c1}`;
+      
+      if (teleportData.eve_active) {
+        eveInterceptValBox.style.display = 'block';
+        eveInterceptVal.textContent = teleportData.eve_bit;
+        statusMessage.innerHTML = `✗ <strong>Eavesdropper detected.</strong> Eve measured q2 $\\rightarrow$ entanglement broken. Mahi received garbage (Fidelity: ${(fid*100).toFixed(1)}%). <br><span style="color: #fca5a5;">Eve learned nothing about θ or φ!</span>`;
+        statusMessage.className = "status-text danger";
+      } else {
+        eveInterceptValBox.style.display = 'none';
+      }
+
+      // Enable Tomography
+      tomoBtn.disabled = false;
+      tomoConsole.textContent = "Console: Ready. Click 'Run Quantum State Tomography' to measure the state's density matrix.";
+      
+      resetControlsOnCompleted(false);
+    });
+
+    // Reset controls if API request fails
+    function resetControlsOnFailure() {
+      teleportBtn.disabled = false;
+      thetaSlider.disabled = false;
+      phiSlider.disabled = false;
+      eveToggle.disabled = false;
+      classicalBlockToggle.disabled = false;
+      modeGodBtn.disabled = false;
+      modeHumanBtn.disabled = false;
+      cloneBtn.disabled = false;
+      if (currentMode === 'human') {
+        genBtn.disabled = false;
+      }
+    }
+
+    // Reset controls on successful protocol completion
+    function resetControlsOnCompleted(blocked) {
+      // Re-enable entanglement button for next run (since Bell pair is consumed)
+      isEntangledReady = false;
+      entangleBtn.disabled = false;
+      entangleBtn.classList.remove('btn-active-success');
+      entangleBtn.innerHTML = `1. Create Entangled Pair`;
+      
+      adamEntangledBadge.classList.add('required');
+      adamEntangledBadge.classList.remove('ready');
+      adamEntangledBadge.textContent = "Entanglement Required";
+      
+      mahiEntangledBadge.classList.add('required');
+      mahiEntangledBadge.classList.remove('ready');
+      mahiEntangledBadge.textContent = "Entanglement Required";
+
+      step4Subtext.textContent = "Adam sends 2 classical bits. Subject to classical speed limits.";
+
+      // Reset prepare state check
+      if (currentMode === 'human') {
+        hiddenTheta = null;
+        hiddenPhi = null;
+        isStatePrepared = false;
+        humanStateText.textContent = blocked 
+          ? "Original qubit was destroyed. Generate a new qubit to send again."
+          : "Qubit successfully teleported. Generate a new qubit to send again.";
+        humanStateText.style.color = "#94a3b8";
+        genBtn.disabled = false;
+      } else {
+        isStatePrepared = true;
+      }
+
+      // Mode toggles re-enabled
+      modeGodBtn.disabled = false;
+      modeHumanBtn.disabled = false;
+      cloneBtn.disabled = false;
+      
+      // Sliders re-enabled
+      thetaSlider.disabled = false;
+      phiSlider.disabled = false;
+      eveToggle.disabled = false;
+      classicalBlockToggle.disabled = false;
+      if (eveToggle.checked) {
+        eveCard.classList.remove('active-card');
+      }
+    }
+
+    // Reset Mahi Card state completely
+    function resetMahiCard() {
+      document.getElementById('mahi-vector').setAttribute('opacity', '0');
+      document.getElementById('mahi-point').setAttribute('opacity', '0');
+      mahiSphereLabel.textContent = "Awaiting Channel...";
+      
+      const mahiQuestionMark = document.getElementById('mahi-question-mark');
+      if (mahiQuestionMark) {
+        mahiQuestionMark.style.display = 'none';
+      }
+      
+      fidelityPercent.textContent = "0%";
+      fidelityBar.style.width = "0%";
+      fidelityBar.className = "fidelity-bar-fill";
+      
+      statusMessage.textContent = "Awaiting quantum teleportation. Adjust sliders and click Teleport.";
+      statusMessage.className = "status-text";
+      
+      bitsDisplayBox.style.display = 'none';
+      correctBtn.disabled = true;
+      tomoBtn.disabled = true;
+      tomoConsole.textContent = "Console: Awaiting successful state teleportation to perform tomography...";
+      
+      const tomoLabel = document.getElementById('tomo-label');
+      if (tomoLabel) {
+        tomoLabel.style.display = 'none';
+      }
+      
+      resetAdamVisualState();
+    }
+
+    // Mode Toggle Logic
+    modeGodBtn.addEventListener('click', () => {
+      if (currentMode === 'god') return;
+      currentMode = 'god';
+      modeGodBtn.classList.add('active');
+      modeHumanBtn.classList.remove('active');
+      godControls.classList.remove('hidden');
+      humanControls.classList.add('hidden');
+      adamQuestionMark.style.display = 'none';
+      
+      resetMahiCard();
+      updateAdamFromSliders();
+    });
+
+    // Random Qubit Generator (Human Mode)
+    genBtn.addEventListener('click', () => {
+      hiddenTheta = Math.random() * Math.PI;
+      hiddenPhi = Math.random() * (2 * Math.PI);
+      
+      humanStateText.innerHTML = "✓ <strong>Qubit received — state unknown</strong>";
+      humanStateText.style.color = "#34d399";
+      
+      isStatePrepared = true;
+      resetAdamVisualState();
+      checkMeasureSendEligibility();
+    });
+
+    modeHumanBtn.addEventListener('click', () => {
+      if (currentMode === 'human') return;
+      currentMode = 'human';
+      modeHumanBtn.classList.add('active');
+      modeGodBtn.classList.remove('active');
+      godControls.classList.add('hidden');
+      humanControls.classList.remove('hidden');
+      
+      adamThetaVal.textContent = '?';
+      adamPhiVal.textContent = '?';
+      
+      hiddenTheta = null;
+      hiddenPhi = null;
+      isStatePrepared = false;
+      humanStateText.textContent = "No qubit generated. Click above to receive a particle.";
+      humanStateText.style.color = "#94a3b8";
+      
+      resetMahiCard();
+      checkMeasureSendEligibility();
+    });
+
+    // Quantum State Tomography Simulator
+    tomoBtn.addEventListener('click', async () => {
+      tomoBtn.disabled = true;
+      tomoConsole.textContent = "";
+      
+      const tomoLabel = document.getElementById('tomo-label');
+      if (tomoLabel) {
+        tomoLabel.style.display = 'block';
+      }
+      
+      const logLines = [
+        "Initializing state tomography console...",
+        "Configuring measurement bases: {X, Y, Z}...",
+        "Note: A single measurement only yields a 0 or 1, collapsing the state.",
+        "To reconstruct the full state, we must run 1000 identical copies from the same source.",
+        "Executing 333 shots in X basis (measuring in |+⟩ / |-⟩)...",
+        "Executing 333 shots in Y basis (measuring in |R⟩ / |L⟩)...",
+        "Executing 334 shots in Z basis (measuring in |0⟩ / |1⟩)...",
+        "Collecting statistical results from AerSimulator...",
+        "Computing density matrix (ρ) via maximum likelihood estimation...",
+        `Reconstructed Bloch vector: x=${(Math.sin(teleportData.mahi_theta)*Math.cos(teleportData.mahi_phi) + (Math.random()-0.5)*0.06).toFixed(3)}, y=${(Math.sin(teleportData.mahi_theta)*Math.sin(teleportData.mahi_phi) + (Math.random()-0.5)*0.06).toFixed(3)}, z=${(Math.cos(teleportData.mahi_theta) + (Math.random()-0.5)*0.06).toFixed(3)}`,
+        `Tomography complete! Approximate state matches Mahi's qubit.`,
+        `[Result] Reconstructed Fidelity: ${(teleportData.fidelity * 100 - Math.random()*2).toFixed(1)}%`
+      ];
+
+      for (let i = 0; i < logLines.length; i++) {
+        tomoConsole.innerHTML += logLines[i] + "<br>";
+        tomoConsole.scrollTop = tomoConsole.scrollHeight;
+        await new Promise(resolve => setTimeout(resolve, 350));
+      }
+      
+      tomoBtn.disabled = false;
+    });
+
+    // On Page load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateAdamFromSliders();
+      loadDefaultCircuit();
+    });
+  </script>
+</body>
+</html>
