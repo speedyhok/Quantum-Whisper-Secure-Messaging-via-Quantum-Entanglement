@@ -22,7 +22,6 @@ Built on a **Qiskit** quantum simulator backend with a clean, glassmorphic front
     ```
 2.  **Run the server:**
     ```bash
-    cd teleporter
     python app.py
     ```
 3.  **Access the app:** Open [http://localhost:5000](http://localhost:5000) in your browser.
