@@ -24,7 +24,7 @@ from flask import Flask, request, jsonify, render_template
 from qiskit import QuantumCircuit, transpile, ClassicalRegister, QuantumRegister
 from qiskit_aer import AerSimulator
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder='.')
 
 @app.route('/')
 def index():
